@@ -1,5 +1,9 @@
 package com.gildedrose;
-
+/*на першому етапі рефакторингу розбив логіку на невеликі методи
+* else замінив на виходи через return
+* спробував дотримуватися максимум одного відступу
+* але деінде не вийшло, далі поправлю, сподіваюся
+* */
 class GildedRose {
     Item[] items;
 
@@ -8,55 +12,78 @@ class GildedRose {
     }
 
     public void updateQuality() {
-        for (int i = 0; i < items.length; i++) {
-            if (!items[i].name.equals("Aged Brie")
-                    && !items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                if (items[i].quality > 0) {
-                    if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                        items[i].quality = items[i].quality - 1;
-                    }
-                }
-            } else {
-                if (items[i].quality < 50) {
-                    items[i].quality = items[i].quality + 1;
-
-                    if (items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                        if (items[i].sellIn < 11) {
-                            if (items[i].quality < 50) {
-                                items[i].quality = items[i].quality + 1;
-                            }
-                        }
-
-                        if (items[i].sellIn < 6) {
-                            if (items[i].quality < 50) {
-                                items[i].quality = items[i].quality + 1;
-                            }
-                        }
-                    }
-                }
+        for (Item item : items) {
+            if (isLegendary(item)) {
+                continue;
             }
 
-            if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                items[i].sellIn = items[i].sellIn - 1;
+            updateSellIn(item);
+
+            if (isSpecialItem(item)) {
+                updateSpecialItemQuality(item);
+                continue;
             }
 
-            if (items[i].sellIn < 0) {
-                if (!items[i].name.equals("Aged Brie")) {
-                    if (!items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                        if (items[i].quality > 0) {
-                            if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                                items[i].quality = items[i].quality - 1;
-                            }
-                        }
-                    } else {
-                        items[i].quality = items[i].quality - items[i].quality;
-                    }
-                } else {
-                    if (items[i].quality < 50) {
-                        items[i].quality = items[i].quality + 1;
-                    }
-                }
+            degradeQuality(item);
+
+            if (isExpired(item)) {
+                handleExpiredItem(item);
             }
+        }
+    }
+
+    private boolean isLegendary(Item item) {
+        return item.name.equals("Sulfuras, Hand of Ragnaros");
+    }
+
+    private void updateSellIn(Item item) {
+        item.sellIn -= 1;
+    }
+
+    private boolean isSpecialItem(Item item) {
+        return item.name.equals("Aged Brie") || item.name.equals("Backstage passes to a TAFKAL80ETC concert");
+    }
+
+    private void updateSpecialItemQuality(Item item) {
+        increaseQuality(item);
+
+        if (item.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
+            if (item.sellIn < 10) {
+                increaseQuality(item);
+            }
+            if (item.sellIn < 5) {
+                increaseQuality(item);
+            }
+        }
+    }
+
+    private void degradeQuality(Item item) {
+        if (item.quality > 0) {
+            item.quality -= 1;
+        }
+    }
+
+    private boolean isExpired(Item item) {
+        return item.sellIn < 0;
+    }
+
+    private void handleExpiredItem(Item item) {
+        if (item.name.equals("Aged Brie")) {
+            increaseQuality(item);
+            return;
+        }
+
+        if (item.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
+            item.quality = 0;
+            return;
+        }
+
+        degradeQuality(item);
+    }
+
+    private void increaseQuality(Item item) {
+        if (item.quality < 50) {
+            item.quality += 1;
         }
     }
 }
